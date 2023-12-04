@@ -46,10 +46,15 @@ namespace RoomColoringPlugin
                 FilteredElementCollector collector = new FilteredElementCollector(doc);
                 IList<Element> rooms = collector.WherePasses(filter).ToElements(); // получаем список со всеми помещениями
 
-                // IList<Element> apartments = new List<Element>(); // список для помещений где ROM_Зона содержит Квартира
+                IList<Element> apartments = new List<Element>(); // список для помещений где ROM_Зона содержит Квартира
 
-                var parameters = from Element in rooms group Element by Element.Parameters;
-
+                foreach (Element element in rooms)
+                {
+                    if (GetParamValueByName("ROM_Зона", element).Contains("Квартира"))
+                    {
+                        apartments.Add(element);
+                    }
+                }
 
 
                 // Если все хорошо
