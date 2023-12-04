@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.2.32616.157
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PIKTestPlugin", "PIKTestPlugin\PIKTestPlugin.csproj", "{A10CDA01-DC1D-4B2B-B98D-715B770D8510}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A10CDA01-DC1D-4B2B-B98D-715B770D8510}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A10CDA01-DC1D-4B2B-B98D-715B770D8510}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A10CDA01-DC1D-4B2B-B98D-715B770D8510}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A10CDA01-DC1D-4B2B-B98D-715B770D8510}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {0812C263-15F8-4988-9B65-EBCCD8D8ED19}
+	EndGlobalSection
+EndGlobal
