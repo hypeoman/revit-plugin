@@ -60,7 +60,7 @@ namespace RoomColoringPlugin
 
                 foreach (Element apartment in apartments)
                 {
-                    string key = GetParamValueByName("Уровень", apartment) + "|" +
+                    string key = GetParamValueByName("Level", apartment) + "|" +
                                  GetParamValueByName("BS_Блок", apartment) + "|" +
                                  GetParamValueByName("ROM_Подзона", apartment) + "|" +
                                  GetParamValueByName("ROM_Зона", apartment);
@@ -73,23 +73,43 @@ namespace RoomColoringPlugin
                     groupedApartments[key].Add(apartment);
                 }
 
-                // Перебираем сгруппированные квартиры
-                foreach (var apartmentGroup in groupedApartments.Values)
-                {
-                    // Проверяем, есть ли соседние номера квартир
-                    if (CheckAdjacentApartmentNumbers(apartmentGroup))
-                    {
-                        // Получаем значение из ROM_Расчетная_подзона_ID
-                        string calculatedZoneId = GetParamValueByName("ROM_Расчетная_подзона_ID", apartmentGroup[0]);
 
-                        // Обновляем ROM_Подзона_Index для всех квартир в группе
-                        foreach (Element apartment in apartmentGroup)
+                foreach (var keyValuePair in groupedApartments)
+                {
+                    List<Element> apartmentList = keyValuePair.Value;
+
+                    // Перебираем пары элементов
+                    for (int i = 0; i < apartmentList.Count - 1; i++)
+                    {
+                        for (int j = i + 1; j < apartmentList.Count; j++)
                         {
-                            string newParamValue = calculatedZoneId + ".Полутон";
-                            SetParamValueByName("ROM_Подзона_Index", apartment, newParamValue);
+                            Element apartment1 = apartmentList[i];
+                            Element apartment2 = apartmentList[j];
+
+                            // Получаем значения параметров
+                            string romZone1 = GetParamValueByName("ROM_Зона", apartment1);
+                            string romZone2 = GetParamValueByName("ROM_Зона", apartment2);
+
+                            int numericPart1;
+                            int numericPart2;
+
+                            int.TryParse(romZone1.Split(' ').Last(), out numericPart1);
+                            int.TryParse(romZone2.Split(' ').Last(), out numericPart2);
+
+                            string romPodzonaIndex1 = GetParamValueByName("ROM_Подзона_Index", apartment1);
+                            string romPodzonaIndex2 = GetParamValueByName("ROM_Подзона_Index", apartment2);
+
+                            // Проверяем условия
+                            if (Math.Abs(numericPart1 - numericPart2) == 1 &&
+                                string.IsNullOrEmpty(romPodzonaIndex1) && string.IsNullOrEmpty(romPodzonaIndex2))
+                            {
+                                SetParamValueByName("ROM_Подзона_Index", apartment1, GetParamValueByName("ROM_Расчетная_подзона_ID", apartment1)+".Полутон");
+                            }
                         }
                     }
                 }
+
+
 
                 // Если все хорошо
                 return Result.Succeeded;
@@ -101,34 +121,6 @@ namespace RoomColoringPlugin
                 return Result.Failed;
             }
         }
-
-        // Функция для проверки смежности номеров квартир
-        private bool CheckAdjacentApartmentNumbers(List<Element> apartmentGroup)
-        {
-            List<int> numericValues = new List<int>();
-
-            for (int i = 0; i < apartmentGroup.Count - 1; i++)
-            {
-                string zoneValue1 = GetParamValueByName("ROM_Зона", apartmentGroup[i]);
-                string zoneValue2 = GetParamValueByName("ROM_Зона", apartmentGroup[i + 1]);
-
-                int numericPart1, numericPart2;
-
-                // Извлечение числовой части, предполагая, что она всегда в конце строки
-                if (int.TryParse(zoneValue1.Split(' ').Last(), out numericPart1) &&
-                    int.TryParse(zoneValue2.Split(' ').Last(), out numericPart2))
-                {
-                    // Проверка, что значения для двух квартир смежны
-                    if (numericPart2 != numericPart1 + 1)
-                    {
-                        return false;
-                    }
-                }
-            }
-
-            return true;
-        }
-
 
         // Функция для установки значения параметра по имени
         private void SetParamValueByName(string paramName, Element element, string paramValue)
