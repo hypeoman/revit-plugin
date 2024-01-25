@@ -40,10 +40,8 @@ namespace RoomColoringPlugin
                 UIDocument uiDoc = uiApp.ActiveUIDocument;
                 Document doc = uiDoc.Document;
 
-                RoomFilter filter = new RoomFilter();
-
                 FilteredElementCollector collector = new FilteredElementCollector(doc);
-                IList<Element> rooms = collector.WherePasses(filter).ToElements(); // получаем список со всеми помещениями
+                IList<Element> rooms = collector.OfCategory(BuiltInCategory.OST_Rooms).ToElements(); // получаем список со всеми помещениями
 
                 IList<Element> apartments = new List<Element>(); // список для помещений где ROM_Зона содержит Квартира
 
@@ -55,15 +53,15 @@ namespace RoomColoringPlugin
                     }
                 }
 
-                // Словарь для хранения квартир, сгруппированных по ключу (комбинация Level, BS_Блок, ROM_Подзона и ROM_Зона)
+                // Словарь для хранения комнат, сгруппированных по ключу (комбинация Level, BS_Блок, ROM_Подзона)
                 Dictionary<string, List<Element>> groupedApartments = new Dictionary<string, List<Element>>();
 
                 foreach (Element apartment in apartments)
                 {
                     string key = GetParamValueByName("Level", apartment) + "|" +
                                  GetParamValueByName("BS_Блок", apartment) + "|" +
-                                 GetParamValueByName("ROM_Подзона", apartment) + "|" +
-                                 GetParamValueByName("ROM_Зона", apartment);
+                                 GetParamValueByName("ROM_Подзона", apartment);
+                                 // + "|" + GetParamValueByName("ROM_Зона", apartment);
 
                     if (!groupedApartments.ContainsKey(key))
                     {
@@ -74,37 +72,19 @@ namespace RoomColoringPlugin
                 }
 
 
-                foreach (var keyValuePair in groupedApartments)
+                foreach (var groupedRooms in groupedApartments)
                 {
-                    List<Element> apartmentList = keyValuePair.Value;
-
-                    // Перебираем пары элементов
-                    for (int i = 0; i < apartmentList.Count - 1; i++)
+                    for (int i = 0; i < groupedRooms.Value.Count - 1; i++)
                     {
-                        for (int j = i + 1; j < apartmentList.Count; j++)
+
+                        int.TryParse(GetParamValueByName("ROM_Зона", groupedRooms.Value[i]).Split(' ').Last(), out int numericPart1);
+                        int.TryParse(GetParamValueByName("ROM_Зона", groupedRooms.Value[i+1]).Split(' ').Last(), out int numericPart2);
+
+                        if ( (Math.Abs(numericPart1 - numericPart2) == 1) 
+                            && string.IsNullOrEmpty(GetParamValueByName("ROM_Подзона_Index", groupedRooms.Value[i])) 
+                            && string.IsNullOrEmpty(GetParamValueByName("ROM_Подзона_Index", groupedRooms.Value[i+1])))
                         {
-                            Element apartment1 = apartmentList[i];
-                            Element apartment2 = apartmentList[j];
-
-                            // Получаем значения параметров
-                            string romZone1 = GetParamValueByName("ROM_Зона", apartment1);
-                            string romZone2 = GetParamValueByName("ROM_Зона", apartment2);
-
-                            int numericPart1;
-                            int numericPart2;
-
-                            int.TryParse(romZone1.Split(' ').Last(), out numericPart1);
-                            int.TryParse(romZone2.Split(' ').Last(), out numericPart2);
-
-                            string romPodzonaIndex1 = GetParamValueByName("ROM_Подзона_Index", apartment1);
-                            string romPodzonaIndex2 = GetParamValueByName("ROM_Подзона_Index", apartment2);
-
-                            // Проверяем условия
-                            if (Math.Abs(numericPart1 - numericPart2) == 1 &&
-                                string.IsNullOrEmpty(romPodzonaIndex1) && string.IsNullOrEmpty(romPodzonaIndex2))
-                            {
-                                SetParamValueByName("ROM_Подзона_Index", apartment1, GetParamValueByName("ROM_Расчетная_подзона_ID", apartment1)+".Полутон");
-                            }
+                            SetParamValueByName("ROM_Подзона_Index", groupedRooms.Value[i], GetParamValueByName("ROM_Расчетная_подзона_ID", groupedRooms.Value[i])+".Полутон");
                         }
                     }
                 }
