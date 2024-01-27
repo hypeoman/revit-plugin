@@ -74,17 +74,20 @@ namespace RoomColoringPlugin
 
                 foreach (var groupedRooms in groupedApartments)
                 {
-                    for (int i = 0; i < groupedRooms.Value.Count - 1; i++)
+                    for (int i = 0; i < groupedRooms.Value.Count; i++)
                     {
 
-                        int.TryParse(GetParamValueByName("ROM_Зона", groupedRooms.Value[i]).Split(' ').Last(), out int numericPart1);
-                        int.TryParse(GetParamValueByName("ROM_Зона", groupedRooms.Value[i+1]).Split(' ').Last(), out int numericPart2);
-
-                        if ( (Math.Abs(numericPart1 - numericPart2) == 1) 
-                            && string.IsNullOrEmpty(GetParamValueByName("ROM_Подзона_Index", groupedRooms.Value[i])) 
-                            && string.IsNullOrEmpty(GetParamValueByName("ROM_Подзона_Index", groupedRooms.Value[i+1])))
+                       for (int j = 0; j < groupedRooms.Value.Count; j++)
                         {
-                            SetParamValueByName("ROM_Подзона_Index", groupedRooms.Value[i], GetParamValueByName("ROM_Расчетная_подзона_ID", groupedRooms.Value[i])+".Полутон");
+                            int.TryParse(GetParamValueByName("ROM_Зона", groupedRooms.Value[i]).Split(' ').Last(), out int numericPart1);
+                            int.TryParse(GetParamValueByName("ROM_Зона", groupedRooms.Value[j]).Split(' ').Last(), out int numericPart2);
+
+                            if ((Math.Abs(numericPart1 - numericPart2) == 1)
+                                && string.IsNullOrEmpty(GetParamValueByName("ROM_Подзона_Index", groupedRooms.Value[i]))
+                                && string.IsNullOrEmpty(GetParamValueByName("ROM_Подзона_Index", groupedRooms.Value[j])))
+                            {
+                                SetParamValueByName("ROM_Подзона_Index", groupedRooms.Value[i], GetParamValueByName("ROM_Расчетная_подзона_ID", groupedRooms.Value[i]) + ".Полутон");
+                            }
                         }
                     }
                 }
