@@ -9,6 +9,10 @@ using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
 using Autodesk.Revit.UI.Selection;
 using Autodesk.Revit.DB.Architecture;
+using System.Runtime.ExceptionServices;
+using System.Diagnostics;
+using System.Xml.Linq;
+using System.IO;
 
 namespace RoomColoringPlugin
 {
@@ -35,85 +39,130 @@ namespace RoomColoringPlugin
         {
             try
             {
-                // Получаем объект приложения и документа
                 UIApplication uiApp = commandData.Application;
                 UIDocument uiDoc = uiApp.ActiveUIDocument;
                 Document doc = uiDoc.Document;
 
-                FilteredElementCollector collector = new FilteredElementCollector(doc);
-                IList<Element> rooms = collector.OfCategory(BuiltInCategory.OST_Rooms).ToElements(); // получаем список со всеми помещениями
+                var allRooms = new FilteredElementCollector(doc) // Все квартиры
+                    .OfCategory(BuiltInCategory.OST_Rooms).OfClass(typeof(SpatialElement)).OfType<Room>()
+                    .Where(e => e.LookupParameter("ROM_Зона")?
+                    .AsString().Contains("Квартира") == true);
 
-                IList<Element> apartments = new List<Element>(); // список для помещений где ROM_Зона содержит Квартира
-
-                foreach (Element element in rooms)
-                {
-                    if (GetParamValueByName("ROM_Зона", element).Contains("Квартира"))
+                var groupedElements = allRooms // Квартиры, сгруппированные по этажу, секции и количеству комнат
+                    .GroupBy(e => new
                     {
-                        apartments.Add(element);
-                    }
-                }
+                        Level = e.get_Parameter(BuiltInParameter.ROOM_LEVEL_ID).AsElementId(),
+                        Block = e.LookupParameter("BS_Блок")?.AsString() ?? string.Empty,
+                        Zone = e.LookupParameter("ROM_Подзона")?.AsString() ?? string.Empty
+                    });
 
-                // Словарь для хранения комнат, сгруппированных по ключу (комбинация Level, BS_Блок, ROM_Подзона)
-                Dictionary<string, List<Element>> groupedApartments = new Dictionary<string, List<Element>>();
-
-                foreach (Element apartment in apartments)
+                using (Transaction trans = new Transaction(doc, "Окраска квартир"))
                 {
-                    string key = GetParamValueByName("Level", apartment) + "|" +
-                                 GetParamValueByName("BS_Блок", apartment) + "|" +
-                                 GetParamValueByName("ROM_Подзона", apartment);
-                                 // + "|" + GetParamValueByName("ROM_Зона", apartment);
-
-                    if (!groupedApartments.ContainsKey(key))
+                    trans.Start();
+                    foreach (var group in groupedElements)
                     {
-                        groupedApartments[key] = new List<Element>();
-                    }
+                        List<Room> sortedElementsInGroup = group
+                            .OrderBy(e => GetNumericPartFromParameter(e.LookupParameter("ROM_Зона")?.AsString()))
+                            .ToList();
 
-                    groupedApartments[key].Add(apartment);
-                }
+                        GetParametersValue(sortedElementsInGroup);
 
+                        List<Room> forColoring = new List<Room>();
 
-                foreach (var groupedRooms in groupedApartments)
-                {
-                    for (int i = 0; i < groupedRooms.Value.Count - 1; i++)
-                    {
+                        int lastNumber = GetNumericPartFromParameter(sortedElementsInGroup[0].LookupParameter("ROM_Зона").AsString());
+                        forColoring.Add(sortedElementsInGroup[0]);
 
-                        int.TryParse(GetParamValueByName("ROM_Зона", groupedRooms.Value[i]).Split(' ').Last(), out int numericPart1);
-                        int.TryParse(GetParamValueByName("ROM_Зона", groupedRooms.Value[i+1]).Split(' ').Last(), out int numericPart2);
+                        bool lastApartmentIsColored = false;
 
-                        if ( (Math.Abs(numericPart1 - numericPart2) == 1) 
-                            && string.IsNullOrEmpty(GetParamValueByName("ROM_Подзона_Index", groupedRooms.Value[i])) 
-                            && string.IsNullOrEmpty(GetParamValueByName("ROM_Подзона_Index", groupedRooms.Value[i+1])))
-                        {
-                            SetParamValueByName("ROM_Подзона_Index", groupedRooms.Value[i], GetParamValueByName("ROM_Расчетная_подзона_ID", groupedRooms.Value[i])+".Полутон");
+                        int i = 1;
+
+                        while (i < sortedElementsInGroup.Count) 
+                        { 
+                            if (lastNumber == GetNumericPartFromParameter(sortedElementsInGroup[i].LookupParameter("ROM_Зона").AsString()))
+                            {
+                                forColoring.Add(sortedElementsInGroup[i]);
+                            }
+                            else
+                            {
+
+                                if (Math.Abs(lastNumber - GetNumericPartFromParameter(sortedElementsInGroup[i].LookupParameter("ROM_Зона").AsString())) == 1)
+                                {
+                                    if (lastApartmentIsColored == false)
+                                    {
+                                        ColorApartments(forColoring, trans, doc);
+                                        lastApartmentIsColored = true;
+                                    }
+                                }
+                                else
+                                {
+                                    lastApartmentIsColored = false;
+                                }
+                                lastNumber = GetNumericPartFromParameter(sortedElementsInGroup[i].LookupParameter("ROM_Зона").AsString());
+                                forColoring = new List<Room>();
+                            }
+
+                            i++;
                         }
+
+
                     }
+                    trans.Commit();
                 }
 
-
-
-                // Если все хорошо
                 return Result.Succeeded;
             }
             catch (Exception ex)
             {
-                // Обработка исключений
                 message = ex.Message;
                 return Result.Failed;
             }
         }
 
-        // Функция для установки значения параметра по имени
-        private void SetParamValueByName(string paramName, Element element, string paramValue)
+        public void GetParametersValue(List<Room> elements)
         {
-            Parameter parameter = element.LookupParameter(paramName);
-            if (parameter != null && !parameter.IsReadOnly)
+            var filePath = "D:\\projects\\c#\\revit\\test-plugin\\Rooms.txt";
+
+            StreamWriter sw = new StreamWriter(filePath, true);
+
+            sw.WriteLine("1 ГРУППА");
+
+            foreach (var element in elements)
             {
-                using (Transaction transaction = new Transaction(element.Document, "Set Parameter Value"))
-                {
-                    transaction.Start();
-                    parameter.Set(paramValue);
-                    transaction.Commit();
-                }
+                sw.WriteLine($"ROM_Зона : {element.LookupParameter("ROM_Зона").AsString()}; ROM_Подзона : {element.LookupParameter("ROM_Подзона").AsString()}; BS_Блок : {element.LookupParameter("BS_Блок").AsString()}; Уровень : {element.LookupParameter("Уровень").AsString()} ");
+            }
+
+            sw.Close();
+        }
+
+        private int GetNumericPartFromParameter(string paramValue)
+        {
+            string[] parts = paramValue.Split(' ');
+            if (parts.Length > 0 && int.TryParse(parts[parts.Length - 1], out int numericPart))
+            {
+                return numericPart;
+            }
+            return 0;
+        }
+
+        private void ColorApartments(List<Room> rooms, Transaction trans, Document doc)
+        {
+            foreach (var room in rooms)
+            {
+                ColorApartment(room, trans, doc);
+            }
+        }
+
+        private void ColorApartment(Room room, Transaction trans, Document doc)
+        {
+            string zoneId = room.LookupParameter("ROM_Расчетная_подзона_ID")?.AsString();
+            Parameter param = room.LookupParameter("ROM_Подзона_Index");
+            if (!string.IsNullOrEmpty(param?.AsString())) return; // Пропускаем уже окрашенные комнаты
+
+            using (SubTransaction subTrans = new SubTransaction(doc))
+            {
+                subTrans.Start();
+                param.Set($"{zoneId}.Полутон");
+                subTrans.Commit();
             }
         }
     }
