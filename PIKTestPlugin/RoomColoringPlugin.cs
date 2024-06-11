@@ -20,21 +20,6 @@ namespace RoomColoringPlugin
     [Regeneration(RegenerationOption.Manual)]
     public class ColorizeRooms : IExternalCommand
     {
-        // Функция для получения значения параметра элемнта по названию
-        public string GetParamValueByName(string name, Element e)
-        {
-            var paramValue = string.Empty;
-
-            foreach (Parameter parameter in e.Parameters)
-            {
-                if (parameter.Definition.Name == name)
-                {
-                    paramValue = parameter.AsString();
-                }
-            }
-            return paramValue;
-        }
-
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
             try
@@ -43,68 +28,64 @@ namespace RoomColoringPlugin
                 UIDocument uiDoc = uiApp.ActiveUIDocument;
                 Document doc = uiDoc.Document;
 
-                var allRooms = new FilteredElementCollector(doc) // Все квартиры
+                IEnumerable<Room> allRooms = new FilteredElementCollector(doc)
                     .OfCategory(BuiltInCategory.OST_Rooms).OfClass(typeof(SpatialElement)).OfType<Room>()
                     .Where(e => e.LookupParameter("ROM_Зона")?
                     .AsString().Contains("Квартира") == true);
 
-                var groupedElements = allRooms // Квартиры, сгруппированные по этажу, секции и количеству комнат
-                    .GroupBy(e => new
-                    {
-                        Level = e.get_Parameter(BuiltInParameter.ROOM_LEVEL_ID).AsElementId(),
-                        Block = e.LookupParameter("BS_Блок")?.AsString() ?? string.Empty,
-                        Zone = e.LookupParameter("ROM_Подзона")?.AsString() ?? string.Empty
-                    });
+                var allApartments = allRooms.GroupBy(room => new // Все квартиры (сгруппированные комнаты)
+                {
+                    Zone = room.LookupParameter("ROM_Зона").AsString(),
+                    Level = room.get_Parameter(BuiltInParameter.ROOM_LEVEL_ID).AsElementId(),
+                    Block = room.LookupParameter("BS_Блок").AsString(),
+                    Subzone = room.LookupParameter("ROM_Подзона").AsString()
+                }).OrderBy(group => group.Key.Zone) // Сортировка по номеру квартиры
+                .ToList();
+
+                var groupedApartments = allApartments.GroupBy(apartments => new // Группы квартир, по Уровню, Секции и Подзоне
+                {
+                    Level = apartments.First().get_Parameter(BuiltInParameter.ROOM_LEVEL_ID).AsElementId(),
+                    Block = apartments.First().LookupParameter("BS_Блок").AsString(),
+                    Subzone = apartments.First().LookupParameter("ROM_Подзона").AsString()
+                }); 
 
                 using (Transaction trans = new Transaction(doc, "Окраска квартир"))
                 {
                     trans.Start();
-                    foreach (var group in groupedElements)
+
+                    foreach (var group in groupedApartments)
                     {
-                        List<Room> sortedElementsInGroup = group
-                            .OrderBy(e => GetNumericPartFromParameter(e.LookupParameter("ROM_Зона")?.AsString()))
-                            .ToList();
+                        var lastApartmentsIsColored = false; 
 
-                        GetParametersValue(sortedElementsInGroup);
+                        var groupList = group.ToList();
 
-                        List<Room> forColoring = new List<Room>();
+                        var lastNumber = GetNumericPartFromParameter(groupList[0].First().LookupParameter("ROM_Зона").AsString());
 
-                        int lastNumber = GetNumericPartFromParameter(sortedElementsInGroup[0].LookupParameter("ROM_Зона").AsString());
-                        forColoring.Add(sortedElementsInGroup[0]);
+                        var i = 1;
 
-                        bool lastApartmentIsColored = false;
-
-                        int i = 1;
-
-                        while (i < sortedElementsInGroup.Count) 
-                        { 
-                            if (lastNumber == GetNumericPartFromParameter(sortedElementsInGroup[i].LookupParameter("ROM_Зона").AsString()))
+                        while (i < group.Count())
+                        {
+                            // Проверяем, что квартиры смежные
+                            if (Math.Abs(lastNumber - GetNumericPartFromParameter(groupList[i].First().LookupParameter("ROM_Зона").AsString())) == 1)
                             {
-                                forColoring.Add(sortedElementsInGroup[i]);
-                            }
-                            else
-                            {
-
-                                if (Math.Abs(lastNumber - GetNumericPartFromParameter(sortedElementsInGroup[i].LookupParameter("ROM_Зона").AsString())) == 1)
+                                if (!lastApartmentsIsColored)
                                 {
-                                    if (lastApartmentIsColored == false)
-                                    {
-                                        ColorApartments(forColoring, trans, doc);
-                                        lastApartmentIsColored = true;
-                                    }
+                                    lastApartmentsIsColored = true;
+                                    ColorApartment(groupList[i], trans, doc);
                                 }
                                 else
                                 {
-                                    lastApartmentIsColored = false;
+                                    lastApartmentsIsColored = false;
                                 }
-                                lastNumber = GetNumericPartFromParameter(sortedElementsInGroup[i].LookupParameter("ROM_Зона").AsString());
-                                forColoring = new List<Room>();
                             }
-
+                            else
+                            {
+                                lastApartmentsIsColored = false;
+                            }
+                            lastNumber = GetNumericPartFromParameter(groupList[i].First().LookupParameter("ROM_Зона").AsString());
                             i++;
                         }
-
-
+;
                     }
                     trans.Commit();
                 }
@@ -118,22 +99,6 @@ namespace RoomColoringPlugin
             }
         }
 
-        public void GetParametersValue(List<Room> elements)
-        {
-            var filePath = "D:\\projects\\c#\\revit\\test-plugin\\Rooms.txt";
-
-            StreamWriter sw = new StreamWriter(filePath, true);
-
-            sw.WriteLine("1 ГРУППА");
-
-            foreach (var element in elements)
-            {
-                sw.WriteLine($"ROM_Зона : {element.LookupParameter("ROM_Зона").AsString()}; ROM_Подзона : {element.LookupParameter("ROM_Подзона").AsString()}; BS_Блок : {element.LookupParameter("BS_Блок").AsString()}; Уровень : {element.LookupParameter("Уровень").AsString()} ");
-            }
-
-            sw.Close();
-        }
-
         private int GetNumericPartFromParameter(string paramValue)
         {
             string[] parts = paramValue.Split(' ');
@@ -144,15 +109,15 @@ namespace RoomColoringPlugin
             return 0;
         }
 
-        private void ColorApartments(List<Room> rooms, Transaction trans, Document doc)
+        private void ColorApartment(IGrouping<object, Room> apartment, Transaction trans, Document doc)
         {
-            foreach (var room in rooms)
+            foreach (var room in apartment)
             {
-                ColorApartment(room, trans, doc);
+                ColorRoom(room, trans, doc);
             }
         }
 
-        private void ColorApartment(Room room, Transaction trans, Document doc)
+        private void ColorRoom(Room room, Transaction trans, Document doc)
         {
             string zoneId = room.LookupParameter("ROM_Расчетная_подзона_ID")?.AsString();
             Parameter param = room.LookupParameter("ROM_Подзона_Index");
