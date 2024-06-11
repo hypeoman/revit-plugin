@@ -47,13 +47,13 @@ namespace RoomColoringPlugin
 
                     foreach (var group in groupedApartments)
                     {
-                        var lastApartmentsIsColored = false; 
+                        bool lastApartmentsIsColored = false; 
 
                         var groupList = group.ToList();
 
-                        var lastNumber = GetNumericPartFromParameter(groupList[0].First().LookupParameter("ROM_Зона").AsString());
+                        int lastNumber = GetNumericPartFromParameter(groupList[0].First().LookupParameter("ROM_Зона").AsString());
 
-                        var i = 1;
+                        int i = 1;
 
                         while (i < group.Count())
                         {
