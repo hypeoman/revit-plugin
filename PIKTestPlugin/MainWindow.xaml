@@ -1,0 +1,44 @@
+﻿<Window x:Class="RoomColoringPlugin.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:RoomColoringPlugin"
+        Title="Colorize Rooms" Height="600" Width="400">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <TextBlock Grid.Row="0" Name="labelTotalApartments" Text="{Binding AllApartmentsText}" Margin="10"/>
+        <TextBlock Grid.Row="1" Name="labelColoredApartments" Text="{Binding AllColoredApartmentsText}" Margin="10"/>
+
+        <TextBlock Grid.Row="2" Name="labelOfOneRoomApartments" Text="{Binding OneRoomApartmentsText}" Margin="10"/>
+        <TextBlock Grid.Row="3" Name="labelColoredOneRoomApartments" Text="{Binding OneRoomColoredApartmentsText}" Margin="10"/>
+
+        <TextBlock Grid.Row="4" Name="labelOfTwoRoomApartments" Text="{Binding TwoRoomsApartmentsText}" Margin="10"/>
+        <TextBlock Grid.Row="5" Name="labelColoredTwoRoomApartments" Text="{Binding TwoRoomsColoredApartmentsText}" Margin="10"/>
+
+        <TextBlock Grid.Row="6" Name="labelOfThreeRoomApartments" Text="{Binding ThreeRoomsApartmentsText}" Margin="10"/>
+        <TextBlock Grid.Row="7" Name="labelColoredThreeRoomApartments" Text="{Binding ThreeRoomsColoredApartmentsText}" Margin="10"/>
+
+        <TextBlock Grid.Row="8" Name="labelOfFourRoomApartments" Text="{Binding FourRoomsApartmentsText}" Margin="10"/>
+        <TextBlock Grid.Row="9" Name="labelColoredFourRoomApartments" Text="{Binding FourRoomsColoredApartmentsText}" Margin="10"/>
+
+        <TextBlock Grid.Row="10" Name="labelOfStudioApartment" Text="{Binding StudioApartmentsText}" Margin="10"/>
+        <TextBlock Grid.Row="11" Name="labelColoredOfStudioApartment" Text="{Binding StudioColoredApartmentsText}" Margin="10"/>
+
+        <StackPanel Grid.Row="12" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,40,0,0">
+            <Button Name="btnAnalyze" Content="Анализ квартир" Width="150" Height="50" Margin="10" Command="{Binding AnalyzeCommand}"/>
+            <Button Name="btnColorize" Content="Покраска квартир" Width="150" Height="50" Margin="10" Command="{Binding ColorCommand}"/>
+        </StackPanel>
+    </Grid>
+</Window>
