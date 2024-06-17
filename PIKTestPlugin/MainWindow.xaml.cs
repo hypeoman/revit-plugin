@@ -1,17 +1,22 @@
-﻿using Autodesk.Revit.DB;
-using Autodesk.Revit.UI;
-using PIKTestPlugin;
-using System.Linq.Expressions;
-using System.Windows;
-
-namespace RoomColoringPlugin
+﻿namespace RoomColoringPlugin
 {
+    using System.Windows;
+    using Autodesk.Revit.DB;
+    using Autodesk.Revit.UI;
+    using PIKTestPlugin;
+
     public partial class MainWindow : Window
     {
-        public ApplicationViewModel _viewModel;
+        private ApplicationViewModel _viewModel;
         private ExternalAnalyzeHandler _externalEventHandler;
         private ExternalEvent _externalEvent;
 
+        /// <summary>
+        /// Конструктор главного окна
+        /// </summary>
+        /// <param name="uiApp">UIApplication получаемое от Revit</param>
+        /// <param name="uiDoc">UIDocument получаемый от Revit</param>
+        /// <param name="doc">Document получаемый от Revit</param>
         public MainWindow(UIApplication uiApp, UIDocument uiDoc, Document doc)
         {
             InitializeComponent();

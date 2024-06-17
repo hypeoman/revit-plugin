@@ -1,28 +1,37 @@
-﻿using Autodesk.Revit.DB;
-using Autodesk.Revit.DB.Architecture;
-using Autodesk.Revit.UI;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace PIKTestPlugin
+﻿namespace PIKTestPlugin
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using Autodesk.Revit.DB;
+    using Autodesk.Revit.DB.Architecture;
+    using Autodesk.Revit.UI;
+
+    /// <summary>
+    /// Обработчик внешнего действия для проведения транзакции анализа квартир
+    /// </summary>
     public class ExternalColorHandler : IExternalEventHandler
     {
-        public void Execute(UIApplication app)
+        /// <summary>
+        /// Метод, который возвращает название обработчика
+        /// </summary>
+        /// <returns>Возвращает название обработчика</returns>
+        public string GetName() => "ExternalColorHandler";
+
+        /// <summary>
+        /// Метод для вызова внешнего действия
+        /// </summary>
+        /// <param name="uiApp">Получаемый экземпляр UIApplication от Revit</param>
+        public void Execute(UIApplication uiApp)
         {
             try
             {
-                Document _doc = app.ActiveUIDocument.Document;
+                Document doc = uiApp.ActiveUIDocument.Document;
 
-                IEnumerable<Room> allRooms = new FilteredElementCollector(_doc)
+                IEnumerable<Room> allRooms = new FilteredElementCollector(doc)
                     .OfCategory(BuiltInCategory.OST_Rooms).OfClass(typeof(SpatialElement)).OfType<Room>()
                     .Where(e => e.LookupParameter("ROM_Зона")?
                     .AsString().Contains("Квартира") == true);
-
-
 
                 var allApartments = allRooms.GroupBy(room => new // Все квартиры (сгруппированные комнаты)
                 {
@@ -40,11 +49,9 @@ namespace PIKTestPlugin
                     Subzone = apartments.First().LookupParameter("ROM_Подзона").AsString()
                 });
 
-                using (Transaction trans = new Transaction(_doc, "Окраска квартир"))
+                using (Transaction trans = new Transaction(doc, "Окраска квартир"))
                 {
                     trans.Start();
-
-                    
 
                     foreach (var group in groupedApartments)
                     {
@@ -64,7 +71,7 @@ namespace PIKTestPlugin
                                 if (!lastApartmentsIsColored)
                                 {
                                     lastApartmentsIsColored = true;
-                                    ColorApartment(groupList[i], trans, _doc);
+                                    ColorApartment(groupList[i], trans, doc);
                                 }
                                 else
                                 {
@@ -75,16 +82,14 @@ namespace PIKTestPlugin
                             {
                                 lastApartmentsIsColored = false;
                             }
+
                             lastNumber = GetNumericPartFromParameter(groupList[i].First().LookupParameter("ROM_Зона").AsString());
                             i++;
                         }
-    ;
                     }
+
                     trans.Commit();
-
                 }
-
-
             }
             catch (Exception ex)
             {
@@ -99,6 +104,7 @@ namespace PIKTestPlugin
             {
                 return numericPart;
             }
+
             return 0;
         }
 
@@ -114,7 +120,8 @@ namespace PIKTestPlugin
         {
             string zoneId = room.LookupParameter("ROM_Расчетная_подзона_ID")?.AsString();
             Parameter param = room.LookupParameter("ROM_Подзона_Index");
-            if (!string.IsNullOrEmpty(param?.AsString())) return; // Пропускаем уже окрашенные комнаты
+            if (!string.IsNullOrEmpty(param?.AsString()))
+                return; // Пропускаем уже окрашенные комнаты
 
             using (SubTransaction subTrans = new SubTransaction(doc))
             {
@@ -123,11 +130,5 @@ namespace PIKTestPlugin
                 subTrans.Commit();
             }
         }
-
-        public string GetName()
-        {
-            return "ExternalColorHandler";
-        }
     }
-
 }

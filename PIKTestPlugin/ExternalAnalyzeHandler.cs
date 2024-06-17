@@ -1,26 +1,38 @@
-﻿using Autodesk.Revit.DB;
-using Autodesk.Revit.DB.Architecture;
-using Autodesk.Revit.UI;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace PIKTestPlugin
+﻿namespace PIKTestPlugin
 {
+    using System.Linq;
+    using Autodesk.Revit.DB;
+    using Autodesk.Revit.DB.Architecture;
+    using Autodesk.Revit.UI;
+
+    /// <summary>
+    /// Обработчик внешнего действия для проведения транзакции окраски квартир
+    /// </summary>
     public class ExternalAnalyzeHandler : IExternalEventHandler
     {
         private ApplicationViewModel _viewModel;
 
+        /// <summary>
+        /// Конструктор обработчика с получением ViewModel
+        /// </summary>
+        /// <param name="viewModel">Получаемый экземпляр ViewModel</param>
         public ExternalAnalyzeHandler(ApplicationViewModel viewModel)
         {
             _viewModel = viewModel;
         }
 
+        /// <summary>
+        /// Метод для получения названия обработчика
+        /// </summary>
+        /// <returns>Название обработчика</returns>
+        public string GetName() => "ExternalColorHandler";
+
+        /// <summary>
+        /// Метод для вызова внешнего действия
+        /// </summary>
+        /// <param name="uiApp">Получаемый экземпляр UIApplication от Revit</param>
         public void Execute(UIApplication uiApp)
         {
-
             Document doc = uiApp.ActiveUIDocument.Document;
 
             var allApartments = new FilteredElementCollector(doc)
@@ -35,69 +47,63 @@ namespace PIKTestPlugin
                     }).OrderBy(group => group.Key.Zone)
                     .ToList();
 
-            _viewModel.AllApartmentsText = $"Общее количество квартир: {allApartments.Count().ToString()}";
+            _viewModel.AllApartmentsText = $"Общее количество квартир: {allApartments.Count()}";
 
             var oneRoomApartments = allApartments.Where(group => group.Key.Subzone == "Однокомнатная квартира");
 
-            _viewModel.OneRoomApartmentsText = $"Количество однокомнатных квартир: {oneRoomApartments.Count().ToString()}";
+            _viewModel.OneRoomApartmentsText = $"Количество однокомнатных квартир: {oneRoomApartments.Count()}";
 
             var twoRoomsApartments = allApartments.Where(group => group.Key.Subzone == "Двухкомнатная квартира");
             
-            _viewModel.TwoRoomsApartmentsText = $"Количество двухкомнатных квартир: {twoRoomsApartments.Count().ToString()}";
+            _viewModel.TwoRoomsApartmentsText = $"Количество двухкомнатных квартир: {twoRoomsApartments.Count()}";
 
             var threeRoomsApartments = allApartments.Where(group => group.Key.Subzone == "Трехкомнатная квартира");
 
-            _viewModel.ThreeRoomsApartmentsText = $"Количество трехкомнатных квартир: {threeRoomsApartments.Count().ToString()}";
+            _viewModel.ThreeRoomsApartmentsText = $"Количество трехкомнатных квартир: {threeRoomsApartments.Count()}";
 
             var fourRoomsApartments = allApartments.Where(group => group.Key.Subzone == "Четырехкомнатная квартира");
 
-            _viewModel.FourRoomsApartmentsText = $"Количество четырехкомнатных квартир: {fourRoomsApartments.Count().ToString()}";
+            _viewModel.FourRoomsApartmentsText = $"Количество четырехкомнатных квартир: {fourRoomsApartments.Count()}";
 
             var studioApartments = allApartments.Where(group => group.Key.Subzone == "Квартира студия");
 
-            _viewModel.StudioApartmentsText = $"Количество квартир-студий: {studioApartments.Count().ToString()}";
+            _viewModel.StudioApartmentsText = $"Количество квартир-студий: {studioApartments.Count()}";
 
             var allColoredApartments = allApartments.Where(group => group.Any(room =>
                     !string.IsNullOrEmpty(room.LookupParameter("ROM_Подзона_Index")?.AsString())))
                     .ToList();
 
-            _viewModel.AllColoredApartmentsText = $"Общее количество окрашенных квартир: {allColoredApartments.Count().ToString()}";
+            _viewModel.AllColoredApartmentsText = $"Общее количество окрашенных квартир: {allColoredApartments.Count()}";
 
             var oneRoomColoredApartments = oneRoomApartments.Where(group => group.Any(room =>
                     !string.IsNullOrEmpty(room.LookupParameter("ROM_Подзона_Index")?.AsString())))
                     .ToList();
 
-            _viewModel.OneRoomColoredApartmentsText = $"Количество окрашенных однокомнатных квартир: {oneRoomColoredApartments.Count().ToString()}";
+            _viewModel.OneRoomColoredApartmentsText = $"Количество окрашенных однокомнатных квартир: {oneRoomColoredApartments.Count()}";
 
             var twoRoomsColoredApartments = twoRoomsApartments.Where(group => group.Any(room =>
                     !string.IsNullOrEmpty(room.LookupParameter("ROM_Подзона_Index")?.AsString())))
                     .ToList();
 
-            _viewModel.TwoRoomsColoredApartmentsText = $"Количество окрашенных двухкомнатных квартир: {twoRoomsColoredApartments.Count().ToString()}";
+            _viewModel.TwoRoomsColoredApartmentsText = $"Количество окрашенных двухкомнатных квартир: {twoRoomsColoredApartments.Count()}";
 
             var threeRoomsColoredApartments = threeRoomsApartments.Where(group => group.Any(room =>
                     !string.IsNullOrEmpty(room.LookupParameter("ROM_Подзона_Index")?.AsString())))
                     .ToList();
 
-            _viewModel.ThreeRoomsColoredApartmentsText = $"Количество окрашенных трехкомнатных квартир:  {threeRoomsColoredApartments.Count().ToString()}";
+            _viewModel.ThreeRoomsColoredApartmentsText = $"Количество окрашенных трехкомнатных квартир: {threeRoomsColoredApartments.Count()}";
 
             var fourRoomsColoredApartments = fourRoomsApartments.Where(group => group.Any(room =>
                     !string.IsNullOrEmpty(room.LookupParameter("ROM_Подзона_Index")?.AsString())))
                     .ToList();
 
-            _viewModel.FourRoomsColoredApartmentsText = $"Количество окрашенных четырехкомнатных квартир:  {fourRoomsColoredApartments.Count().ToString()}";
+            _viewModel.FourRoomsColoredApartmentsText = $"Количество окрашенных четырехкомнатных квартир: {fourRoomsColoredApartments.Count()}";
 
             var studioColoredApartments = studioApartments.Where(group => group.Any(room =>
                     !string.IsNullOrEmpty(room.LookupParameter("ROM_Подзона_Index")?.AsString())))
                     .ToList();
 
-            _viewModel.StudioColoredApartmentsText = $"Количество окрашенных квартир-студий:  {studioColoredApartments.Count().ToString()}";
-        }
-
-        public string GetName()
-        {
-            return "ExternalColorHandler";
+            _viewModel.StudioColoredApartmentsText = $"Количество окрашенных квартир-студий: {studioColoredApartments.Count()}";
         }
     }
-
 }
