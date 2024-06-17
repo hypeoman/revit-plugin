@@ -1,13 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Autodesk.Revit.Attributes;
+﻿using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
-using Autodesk.Revit.DB.Architecture;
-using System.Windows;
-using System.Windows.Interop;
-using System.Diagnostics;
 
 namespace RoomColoringPlugin
 {
