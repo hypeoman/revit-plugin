@@ -1,0 +1,54 @@
+﻿<Window x:Class="RoomColoringPlugin.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:RoomColoringPlugin"
+        Title="Colorize Rooms" Height="600" Width="400">
+    <Window.Resources>
+        <Style x:Key="Buttons" TargetType="Button">
+            <Setter Property="Margin" Value="10"/>
+            <Setter Property="Width" Value="150" />
+            <Setter Property="Height" Value="50" />
+        </Style>
+        <Style x:Key="TextBlocks" TargetType="TextBlock">
+            <Setter Property="Margin" Value="10"/>
+        </Style>
+    </Window.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <TextBlock Grid.Row="0" Name="labelTotalApartments" Text="{Binding AllApartmentsText}" Style="{StaticResource TextBlocks}"/>
+        <TextBlock Grid.Row="1" Name="labelColoredApartments" Text="{Binding AllColoredApartmentsText}" Style="{StaticResource TextBlocks}"/>
+
+        <TextBlock Grid.Row="2" Name="labelOfOneRoomApartments" Text="{Binding OneRoomApartmentsText}" Style="{StaticResource TextBlocks}"/>
+        <TextBlock Grid.Row="3" Name="labelColoredOneRoomApartments" Text="{Binding OneRoomColoredApartmentsText}" Style="{StaticResource TextBlocks}"/>
+
+        <TextBlock Grid.Row="4" Name="labelOfTwoRoomApartments" Text="{Binding TwoRoomsApartmentsText}" Style="{StaticResource TextBlocks}"/>
+        <TextBlock Grid.Row="5" Name="labelColoredTwoRoomApartments" Text="{Binding TwoRoomsColoredApartmentsText}" Style="{StaticResource TextBlocks}"/>
+
+        <TextBlock Grid.Row="6" Name="labelOfThreeRoomApartments" Text="{Binding ThreeRoomsApartmentsText}" Style="{StaticResource TextBlocks}"/>
+        <TextBlock Grid.Row="7" Name="labelColoredThreeRoomApartments" Text="{Binding ThreeRoomsColoredApartmentsText}" Style="{StaticResource TextBlocks}"/>
+
+        <TextBlock Grid.Row="8" Name="labelOfFourRoomApartments" Text="{Binding FourRoomsApartmentsText}" Style="{StaticResource TextBlocks}"/>
+        <TextBlock Grid.Row="9" Name="labelColoredFourRoomApartments" Text="{Binding FourRoomsColoredApartmentsText}" Style="{StaticResource TextBlocks}"/>
+
+        <TextBlock Grid.Row="10" Name="labelOfStudioApartment" Text="{Binding StudioApartmentsText}" Style="{StaticResource TextBlocks}"/>
+        <TextBlock Grid.Row="11" Name="labelColoredOfStudioApartment" Text="{Binding StudioColoredApartmentsText}" Style="{StaticResource TextBlocks}"/>
+
+        <StackPanel Grid.Row="12" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,40,0,0">
+            <Button Name="btnAnalyze" Content="Анализ квартир" Style="{StaticResource Buttons}" Command="{Binding AnalyzeCommand}"/>
+            <Button Name="btnColorize" Content="Покраска квартир" Style="{StaticResource Buttons}" Command="{Binding ColorCommand}"/>
+        </StackPanel>
+    </Grid>
+</Window>
